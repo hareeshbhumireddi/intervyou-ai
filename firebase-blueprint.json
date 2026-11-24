@@ -1,0 +1,835 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Candidate profile, compressed avatar data URL, resume summary, notification preferences, and aggregated interview statistics stored privately per authenticated user.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Firebase Authentication UID of the owner."
+        },
+        "fullName": {
+          "type": "string",
+          "maxLength": 120,
+          "description": "Candidate full display name."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 160,
+          "description": "Primary email address."
+        },
+        "dob": {
+          "type": "string",
+          "maxLength": 20,
+          "description": "Date of birth in YYYY-MM-DD format."
+        },
+        "gender": {
+          "type": "string",
+          "maxLength": 32,
+          "description": "Candidate gender selection."
+        },
+        "mobile": {
+          "type": "string",
+          "maxLength": 24,
+          "description": "Candidate phone number."
+        },
+        "address": {
+          "type": "string",
+          "maxLength": 300,
+          "description": "Candidate address or city."
+        },
+        "qualification": {
+          "type": "string",
+          "maxLength": 160,
+          "description": "Highest academic qualification."
+        },
+        "preferredLanguage": {
+          "type": "string",
+          "maxLength": 40,
+          "description": "Preferred interview spoken language."
+        },
+        "avatarUrl": {
+          "type": "string",
+          "maxLength": 250000,
+          "description": "Compressed profile image data URL or HTTPS photo URL."
+        },
+        "resumeText": {
+          "type": "string",
+          "maxLength": 40000,
+          "description": "Extracted or edited resume plain text."
+        },
+        "resumeFile": {
+          "type": "object",
+          "description": "Metadata for the uploaded resume document."
+        },
+        "education": {
+          "type": "object",
+          "description": "Degree, college, specialization, graduationYear, and cgpa."
+        },
+        "skills": {
+          "type": "array",
+          "description": "List of candidate skills (max 30 entries)."
+        },
+        "certificates": {
+          "type": "array",
+          "description": "List of candidate certificates (max 20 entries)."
+        },
+        "workHistory": {
+          "type": "array",
+          "description": "Structured candidate work history entries imported from LinkedIn or entered manually (max 25 entries)."
+        },
+        "linkedinProfile": {
+          "type": "object",
+          "description": "LinkedIn connection status, profile URL, headline, and sync metadata."
+        },
+        "jobAlertSubscription": {
+          "type": "object",
+          "description": "Email job alert subscription settings."
+        },
+        "stats": {
+          "type": "object",
+          "description": "Interview summary stats (totalInterviews, avgScore, bestScore)."
+        },
+        "isCompleted": {
+          "type": "boolean",
+          "description": "Whether onboarding/profile setup is completed."
+        },
+        "profileUpdatedAt": {
+          "type": "string",
+          "maxLength": 60,
+          "description": "ISO timestamp of the latest explicit user profile edit."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server last-updated timestamp."
+        }
+      },
+      "required": ["uid", "fullName", "email", "createdAt", "updatedAt"]
+    },
+    "InterviewSession": {
+      "title": "InterviewSession",
+      "description": "Attended mock interview session including questions, candidate responses, AI evaluations, and final report.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Interview session ID."
+        },
+        "userId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Owner Firebase Auth UID."
+        },
+        "role": {
+          "type": "string",
+          "maxLength": 160,
+          "description": "Target job role."
+        },
+        "interviewType": {
+          "type": "string",
+          "maxLength": 120,
+          "description": "Interview round type label."
+        },
+        "round": {
+          "type": "string",
+          "maxLength": 80,
+          "description": "Selected round key."
+        },
+        "roundLabel": {
+          "type": "string",
+          "maxLength": 120,
+          "description": "Formatted round label."
+        },
+        "sector": {
+          "type": "string",
+          "enum": ["Private", "Government"],
+          "description": "Employment sector."
+        },
+        "difficulty": {
+          "type": "string",
+          "enum": ["Beginner", "Intermediate", "Advanced"],
+          "description": "Session difficulty level."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "completed"],
+          "description": "Current session lifecycle state."
+        },
+        "date": {
+          "type": "string",
+          "maxLength": 60,
+          "description": "ISO date string when session started."
+        },
+        "duration": {
+          "type": "string",
+          "maxLength": 40,
+          "description": "Formatted duration string."
+        },
+        "questions": {
+          "type": "array",
+          "description": "Interview question prompts (max 30)."
+        },
+        "answers": {
+          "type": "object",
+          "description": "Map of questionId to candidate answer text."
+        },
+        "evaluations": {
+          "type": "object",
+          "description": "Map of questionId to structured evaluation."
+        },
+        "overallReport": {
+          "type": "object",
+          "description": "Completed interview performance report."
+        },
+        "examName": {
+          "type": "string",
+          "maxLength": 160,
+          "description": "Optional government exam name."
+        },
+        "department": {
+          "type": "string",
+          "maxLength": 160,
+          "description": "Optional government department."
+        },
+        "preferredLanguage": {
+          "type": "string",
+          "maxLength": 40,
+          "description": "Session language preference."
+        },
+        "companyName": {
+          "type": "string",
+          "maxLength": 160,
+          "description": "Optional target company."
+        },
+        "jobId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Optional associated job identifier."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server last-updated timestamp."
+        }
+      },
+      "required": ["id", "userId", "role", "sector", "difficulty", "status", "date", "questions", "answers", "evaluations", "createdAt", "updatedAt"]
+    },
+    "SavedJob": {
+      "title": "SavedJob",
+      "description": "Bookmarked job opening saved by the authenticated user.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "number",
+          "description": "Numeric saved job record ID."
+        },
+        "userId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Owner Firebase Auth UID."
+        },
+        "jobId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Source job listing ID."
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Job title."
+        },
+        "company": {
+          "type": "string",
+          "maxLength": 160,
+          "description": "Hiring organization."
+        },
+        "location": {
+          "type": "string",
+          "maxLength": 160,
+          "description": "Job location."
+        },
+        "applyLink": {
+          "type": "string",
+          "maxLength": 600,
+          "description": "Verified official application URL."
+        },
+        "savedAt": {
+          "type": "string",
+          "maxLength": 60,
+          "description": "ISO timestamp when saved."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server last-updated timestamp."
+        }
+      },
+      "required": ["id", "userId", "title", "company", "savedAt", "createdAt", "updatedAt"]
+    },
+    "JobApplication": {
+      "title": "JobApplication",
+      "description": "Quick Apply application intent record submitted by the candidate.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "number",
+          "description": "Numeric application identifier."
+        },
+        "userId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Owner Firebase Auth UID."
+        },
+        "jobId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Associated job listing ID."
+        },
+        "jobTitle": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Job role title."
+        },
+        "company": {
+          "type": "string",
+          "maxLength": 160,
+          "description": "Company or department name."
+        },
+        "location": {
+          "type": "string",
+          "maxLength": 160,
+          "description": "Job location."
+        },
+        "platform": {
+          "type": "string",
+          "maxLength": 40,
+          "description": "Source platform name."
+        },
+        "applyLink": {
+          "type": "string",
+          "maxLength": 600,
+          "description": "Official application link."
+        },
+        "candidateName": {
+          "type": "string",
+          "maxLength": 120,
+          "description": "Applicant full name."
+        },
+        "candidateEmail": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 160,
+          "description": "Applicant contact email."
+        },
+        "candidatePhone": {
+          "type": "string",
+          "maxLength": 32,
+          "description": "Applicant contact phone."
+        },
+        "resumeName": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Uploaded resume file name used for intent."
+        },
+        "availability": {
+          "type": "string",
+          "maxLength": 60,
+          "description": "Candidate availability window."
+        },
+        "expectedSalary": {
+          "type": "string",
+          "maxLength": 80,
+          "description": "Expected compensation note."
+        },
+        "intentSummary": {
+          "type": "string",
+          "maxLength": 2000,
+          "description": "Auto-populated application intent pitch."
+        },
+        "matchedSkills": {
+          "type": "array",
+          "description": "Skills matched from resume (max 20)."
+        },
+        "appliedAt": {
+          "type": "string",
+          "maxLength": 60,
+          "description": "ISO timestamp when applied."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Submitted", "In Review"],
+          "description": "Application tracking status."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server last-updated timestamp."
+        }
+      },
+      "required": ["id", "userId", "jobId", "jobTitle", "company", "candidateName", "candidateEmail", "intentSummary", "appliedAt", "status", "createdAt", "updatedAt"]
+    },
+    "PeerProfile": {
+      "title": "PeerProfile",
+      "description": "PII-free public peer practice availability card displayed in the Peer Practice directory.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Firebase Authentication UID of the peer."
+        },
+        "displayName": {
+          "type": "string",
+          "maxLength": 80,
+          "description": "Public display name shown to peers (no email or phone PII)."
+        },
+        "targetRole": {
+          "type": "string",
+          "maxLength": 120,
+          "description": "Role the peer is preparing for."
+        },
+        "sector": {
+          "type": "string",
+          "enum": ["Private", "Government"],
+          "description": "Preferred interview sector."
+        },
+        "difficulty": {
+          "type": "string",
+          "enum": ["Beginner", "Intermediate", "Advanced"],
+          "description": "Preferred interview difficulty level."
+        },
+        "isAvailable": {
+          "type": "boolean",
+          "description": "Whether the peer is currently open to receiving live practice requests."
+        },
+        "skills": {
+          "type": "array",
+          "description": "Up to 15 practice topics or technical skills."
+        },
+        "bio": {
+          "type": "string",
+          "maxLength": 400,
+          "description": "Short practice focus note or interview goal."
+        },
+        "experienceLevel": {
+          "type": "string",
+          "maxLength": 60,
+          "description": "Experience bracket (e.g. Fresher, 2-4 Years)."
+        },
+        "preferredLanguage": {
+          "type": "string",
+          "maxLength": 40,
+          "description": "Spoken language preference for peer mock sessions."
+        },
+        "avatarInitials": {
+          "type": "string",
+          "maxLength": 4,
+          "description": "Two-character display initials."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server last-updated timestamp."
+        }
+      },
+      "required": ["uid", "displayName", "targetRole", "sector", "difficulty", "isAvailable", "skills", "createdAt", "updatedAt"]
+    },
+    "PeerRequest": {
+      "title": "PeerRequest",
+      "description": "Peer practice match invitation managed through a request-accept workflow.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Request document ID."
+        },
+        "senderId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Sender Firebase Auth UID."
+        },
+        "senderName": {
+          "type": "string",
+          "maxLength": 80,
+          "description": "Sender public display name."
+        },
+        "senderRole": {
+          "type": "string",
+          "maxLength": 120,
+          "description": "Sender target role."
+        },
+        "receiverId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Receiver Firebase Auth UID."
+        },
+        "receiverName": {
+          "type": "string",
+          "maxLength": 80,
+          "description": "Receiver public display name."
+        },
+        "receiverRole": {
+          "type": "string",
+          "maxLength": 120,
+          "description": "Receiver target role."
+        },
+        "participantIds": {
+          "type": "array",
+          "description": "Ordered two-element array [senderId, receiverId] for scoped participant queries."
+        },
+        "topic": {
+          "type": "string",
+          "maxLength": 160,
+          "description": "Practice session focus or interview round."
+        },
+        "sector": {
+          "type": "string",
+          "enum": ["Private", "Government"],
+          "description": "Interview sector."
+        },
+        "difficulty": {
+          "type": "string",
+          "enum": ["Beginner", "Intermediate", "Advanced"],
+          "description": "Session difficulty level."
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "Optional note from the requester."
+        },
+        "scheduledTime": {
+          "type": "string",
+          "maxLength": 60,
+          "description": "Optional proposed practice time label."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "accepted", "declined", "cancelled", "completed"],
+          "description": "Request-accept lifecycle status."
+        },
+        "sessionId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Linked live PeerSession ID assigned when accepted."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server last-updated timestamp."
+        }
+      },
+      "required": ["id", "senderId", "senderName", "senderRole", "receiverId", "receiverName", "receiverRole", "participantIds", "topic", "sector", "difficulty", "status", "createdAt", "updatedAt"]
+    },
+    "PeerSession": {
+      "title": "PeerSession",
+      "description": "Real-time shared state for a matched peer practice interview room.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Session document ID."
+        },
+        "requestId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Accepted PeerRequest ID authorizing this room."
+        },
+        "hostId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Sender UID from the accepted request."
+        },
+        "hostName": {
+          "type": "string",
+          "maxLength": 80,
+          "description": "Host display name."
+        },
+        "guestId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Receiver UID from the accepted request."
+        },
+        "guestName": {
+          "type": "string",
+          "maxLength": 80,
+          "description": "Guest display name."
+        },
+        "participantIds": {
+          "type": "array",
+          "description": "Two-element array [hostId, guestId] authorizing room access."
+        },
+        "interviewerId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "UID of the participant currently acting as Interviewer."
+        },
+        "topic": {
+          "type": "string",
+          "maxLength": 160,
+          "description": "Session interview topic."
+        },
+        "currentQuestion": {
+          "type": "string",
+          "maxLength": 600,
+          "description": "Active practice prompt displayed to both peers."
+        },
+        "currentCategory": {
+          "type": "string",
+          "maxLength": 80,
+          "description": "Category label of the current question."
+        },
+        "sharedNotes": {
+          "type": "string",
+          "maxLength": 4000,
+          "description": "Collaborative scratchpad notes updated during practice."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "completed"],
+          "description": "Live room lifecycle state."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server last-updated timestamp."
+        }
+      },
+      "required": ["id", "requestId", "hostId", "hostName", "guestId", "guestName", "participantIds", "interviewerId", "topic", "currentQuestion", "status", "createdAt", "updatedAt"]
+    },
+    "PeerMessage": {
+      "title": "PeerMessage",
+      "description": "Live chat, prompt, or structured rubric feedback message inside a PeerSession.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Message ID."
+        },
+        "sessionId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Parent PeerSession ID."
+        },
+        "participantIds": {
+          "type": "array",
+          "description": "Two-element participant UID list copied from parent session for scoped list rules."
+        },
+        "senderId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Author Firebase Auth UID."
+        },
+        "senderName": {
+          "type": "string",
+          "maxLength": 80,
+          "description": "Author public display name."
+        },
+        "senderRole": {
+          "type": "string",
+          "enum": ["Interviewer", "Candidate"],
+          "description": "Author role when message was sent."
+        },
+        "type": {
+          "type": "string",
+          "enum": ["chat", "question", "feedback"],
+          "description": "Message category."
+        },
+        "text": {
+          "type": "string",
+          "maxLength": 2000,
+          "description": "Message content or feedback text."
+        },
+        "score": {
+          "type": "number",
+          "description": "Optional peer feedback score (0-100)."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        }
+      },
+      "required": ["id", "sessionId", "participantIds", "senderId", "senderName", "senderRole", "type", "text", "createdAt"]
+    },
+    "PracticeGoal": {
+      "title": "PracticeGoal",
+      "description": "User-defined interview preparation milestone and progress tracker stored privately per user.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Goal document ID."
+        },
+        "userId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Owner Firebase Auth UID."
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 140,
+          "description": "Milestone description (e.g., 10 mock interviews completed)."
+        },
+        "metricType": {
+          "type": "string",
+          "enum": ["interviews_completed", "average_score", "best_score", "custom"],
+          "description": "Determines whether progress is auto-computed from interviews or manually tracked."
+        },
+        "unitLabel": {
+          "type": "string",
+          "maxLength": 32,
+          "description": "Display unit label (e.g., interviews, %, tasks)."
+        },
+        "targetValue": {
+          "type": "number",
+          "description": "Target milestone numeric value."
+        },
+        "currentValue": {
+          "type": "number",
+          "description": "Current recorded numeric progress."
+        },
+        "targetDate": {
+          "type": "string",
+          "maxLength": 20,
+          "description": "Optional YYYY-MM-DD target deadline."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "completed"],
+          "description": "Milestone completion state."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server last-updated timestamp."
+        }
+      },
+      "required": ["id", "userId", "title", "metricType", "unitLabel", "targetValue", "currentValue", "status", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserProfile"
+      },
+      "description": "Private candidate profile, compressed avatarUrl, resume text, skills, alert settings, and aggregated stats."
+    },
+    "/users/{userId}/interviews/{interviewId}": {
+      "schema": {
+        "$ref": "#/entities/InterviewSession"
+      },
+      "description": "Persisted mock interview sessions and evaluation reports attended by the user."
+    },
+    "/users/{userId}/savedJobs/{savedJobId}": {
+      "schema": {
+        "$ref": "#/entities/SavedJob"
+      },
+      "description": "Jobs bookmarked by the authenticated user."
+    },
+    "/users/{userId}/applications/{applicationId}": {
+      "schema": {
+        "$ref": "#/entities/JobApplication"
+      },
+      "description": "Quick Apply application intents tracked for the authenticated user."
+    },
+    "/users/{userId}/goals/{goalId}": {
+      "schema": {
+        "$ref": "#/entities/PracticeGoal"
+      },
+      "description": "Custom and auto-tracked interview preparation milestones created by the user."
+    },
+    "/peerProfiles/{userId}": {
+      "schema": {
+        "$ref": "#/entities/PeerProfile"
+      },
+      "description": "PII-free public peer directory cards for live peer mock interview matching."
+    },
+    "/peerRequests/{requestId}": {
+      "schema": {
+        "$ref": "#/entities/PeerRequest"
+      },
+      "description": "Peer practice match invitations with request-accept status lifecycle."
+    },
+    "/peerSessions/{sessionId}": {
+      "schema": {
+        "$ref": "#/entities/PeerSession"
+      },
+      "description": "Real-time shared live peer practice session room state."
+    },
+    "/peerSessions/{sessionId}/messages/{messageId}": {
+      "schema": {
+        "$ref": "#/entities/PeerMessage"
+      },
+      "description": "Append-only live chat, question prompts, and rubric feedback messages inside a peer practice room."
+    }
+  }
+}

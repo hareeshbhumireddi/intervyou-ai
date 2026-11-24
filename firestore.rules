@@ -1,0 +1,673 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // -----------------------------------------------------------------------
+    // Global Safety Net (Default-Deny)
+    // -----------------------------------------------------------------------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // -----------------------------------------------------------------------
+    // Global Security & Validation Primitives
+    // -----------------------------------------------------------------------
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isVerifiedOwner(userId) {
+      return isVerifiedUser() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isOptString(data, key, maxLen) {
+      return !(key in data) || (data[key] is string && data[key].size() <= maxLen);
+    }
+
+    function isOptList(data, key, maxLen) {
+      return !(key in data) || (
+        data[key] is list &&
+        data[key].size() <= maxLen &&
+        (data[key].size() == 0 || data[key][0] is string || data[key][0] is map)
+      );
+    }
+
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['uid', 'fullName', 'email', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly([
+          'uid', 'fullName', 'email', 'dob', 'gender', 'mobile', 'address',
+          'qualification', 'preferredLanguage', 'avatarUrl', 'resumeText',
+          'resumeFile', 'education', 'skills', 'certificates', 'workHistory',
+          'linkedinProfile', 'jobAlertSubscription', 'stats', 'isCompleted',
+          'profileUpdatedAt', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.uid)
+        && data.uid == request.auth.uid
+        && data.fullName is string && data.fullName.size() <= 120
+        && data.email is string && data.email.size() <= 160
+        && isOptString(data, 'dob', 20)
+        && isOptString(data, 'gender', 32)
+        && isOptString(data, 'mobile', 24)
+        && isOptString(data, 'address', 300)
+        && isOptString(data, 'qualification', 160)
+        && isOptString(data, 'preferredLanguage', 40)
+        && isOptString(data, 'avatarUrl', 250000)
+        && isOptString(data, 'resumeText', 40000)
+        && (!('resumeFile' in data) || data.resumeFile is map)
+        && (!('education' in data) || data.education is map)
+        && isOptList(data, 'skills', 30)
+        && isOptList(data, 'certificates', 20)
+        && isOptList(data, 'workHistory', 25)
+        && (!('linkedinProfile' in data) || data.linkedinProfile is map)
+        && (!('jobAlertSubscription' in data) || data.jobAlertSubscription is map)
+        && (!('stats' in data) || data.stats is map)
+        && (!('isCompleted' in data) || data.isCompleted is bool)
+        && isOptString(data, 'profileUpdatedAt', 60)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidInterviewSession(data) {
+      return data.keys().hasAll([
+          'id', 'userId', 'role', 'sector', 'difficulty', 'status',
+          'date', 'questions', 'answers', 'evaluations', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'userId', 'role', 'interviewType', 'round', 'roundLabel',
+          'sector', 'difficulty', 'status', 'date', 'duration', 'questions',
+          'answers', 'evaluations', 'overallReport', 'examName', 'department',
+          'preferredLanguage', 'companyName', 'jobId', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.id)
+        && isValidId(data.userId)
+        && data.userId == request.auth.uid
+        && data.role is string && data.role.size() >= 1 && data.role.size() <= 160
+        && isOptString(data, 'interviewType', 120)
+        && isOptString(data, 'round', 80)
+        && isOptString(data, 'roundLabel', 120)
+        && data.sector is string && (data.sector == 'Private' || data.sector == 'Government')
+        && data.difficulty is string && (data.difficulty == 'Beginner' || data.difficulty == 'Intermediate' || data.difficulty == 'Advanced')
+        && data.status is string && (data.status == 'active' || data.status == 'completed')
+        && data.date is string && data.date.size() <= 60
+        && isOptString(data, 'duration', 40)
+        && data.questions is list && data.questions.size() <= 30 && (data.questions.size() == 0 || data.questions[0] is map)
+        && data.answers is map
+        && data.evaluations is map
+        && (!('overallReport' in data) || data.overallReport is map)
+        && isOptString(data, 'examName', 160)
+        && isOptString(data, 'department', 160)
+        && isOptString(data, 'preferredLanguage', 40)
+        && isOptString(data, 'companyName', 160)
+        && isOptString(data, 'jobId', 128)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidSavedJob(data) {
+      return data.keys().hasAll(['id', 'userId', 'title', 'company', 'savedAt', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly([
+          'id', 'userId', 'jobId', 'title', 'company', 'location',
+          'applyLink', 'savedAt', 'createdAt', 'updatedAt'
+        ])
+        && data.id is number
+        && isValidId(data.userId)
+        && data.userId == request.auth.uid
+        && isOptString(data, 'jobId', 128)
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 200
+        && data.company is string && data.company.size() >= 1 && data.company.size() <= 160
+        && isOptString(data, 'location', 160)
+        && isOptString(data, 'applyLink', 600)
+        && data.savedAt is string && data.savedAt.size() <= 60
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidJobApplication(data) {
+      return data.keys().hasAll([
+          'id', 'userId', 'jobId', 'jobTitle', 'company', 'candidateName',
+          'candidateEmail', 'intentSummary', 'appliedAt', 'status', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'userId', 'jobId', 'jobTitle', 'company', 'location',
+          'platform', 'applyLink', 'candidateName', 'candidateEmail',
+          'candidatePhone', 'resumeName', 'availability', 'expectedSalary',
+          'intentSummary', 'matchedSkills', 'appliedAt', 'status', 'createdAt', 'updatedAt'
+        ])
+        && data.id is number
+        && isValidId(data.userId)
+        && data.userId == request.auth.uid
+        && isValidId(data.jobId)
+        && data.jobTitle is string && data.jobTitle.size() >= 1 && data.jobTitle.size() <= 200
+        && data.company is string && data.company.size() >= 1 && data.company.size() <= 160
+        && isOptString(data, 'location', 160)
+        && isOptString(data, 'platform', 40)
+        && isOptString(data, 'applyLink', 600)
+        && data.candidateName is string && data.candidateName.size() <= 120
+        && data.candidateEmail is string && data.candidateEmail.size() <= 160
+        && isOptString(data, 'candidatePhone', 32)
+        && isOptString(data, 'resumeName', 200)
+        && isOptString(data, 'availability', 60)
+        && isOptString(data, 'expectedSalary', 80)
+        && data.intentSummary is string && data.intentSummary.size() >= 1 && data.intentSummary.size() <= 2000
+        && isOptList(data, 'matchedSkills', 20)
+        && data.appliedAt is string && data.appliedAt.size() <= 60
+        && data.status is string && (data.status == 'Submitted' || data.status == 'In Review')
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function hasParentUser(userId) {
+      return exists(/databases/$(database)/documents/users/$(userId));
+    }
+
+    function isValidPeerProfile(data) {
+      return data.keys().hasAll([
+          'uid', 'displayName', 'targetRole', 'sector', 'difficulty',
+          'isAvailable', 'skills', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'uid', 'displayName', 'targetRole', 'sector', 'difficulty',
+          'isAvailable', 'skills', 'bio', 'experienceLevel',
+          'preferredLanguage', 'avatarInitials', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.uid)
+        && data.uid == request.auth.uid
+        && data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 80
+        && data.targetRole is string && data.targetRole.size() >= 1 && data.targetRole.size() <= 120
+        && data.sector is string && (data.sector == 'Private' || data.sector == 'Government')
+        && data.difficulty is string && (data.difficulty == 'Beginner' || data.difficulty == 'Intermediate' || data.difficulty == 'Advanced')
+        && data.isAvailable is bool
+        && data.skills is list && data.skills.size() <= 15 && (data.skills.size() == 0 || data.skills[0] is string)
+        && isOptString(data, 'bio', 400)
+        && isOptString(data, 'experienceLevel', 60)
+        && isOptString(data, 'preferredLanguage', 40)
+        && isOptString(data, 'avatarInitials', 4)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidPeerRequest(data) {
+      return data.keys().hasAll([
+          'id', 'senderId', 'senderName', 'senderRole',
+          'receiverId', 'receiverName', 'receiverRole',
+          'participantIds', 'topic', 'sector', 'difficulty',
+          'status', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'senderId', 'senderName', 'senderRole',
+          'receiverId', 'receiverName', 'receiverRole',
+          'participantIds', 'topic', 'sector', 'difficulty',
+          'message', 'scheduledTime', 'status', 'sessionId',
+          'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.id)
+        && isValidId(data.senderId)
+        && isValidId(data.receiverId)
+        && data.senderId != data.receiverId
+        && data.senderName is string && data.senderName.size() >= 1 && data.senderName.size() <= 80
+        && data.senderRole is string && data.senderRole.size() >= 1 && data.senderRole.size() <= 120
+        && data.receiverName is string && data.receiverName.size() >= 1 && data.receiverName.size() <= 80
+        && data.receiverRole is string && data.receiverRole.size() >= 1 && data.receiverRole.size() <= 120
+        && data.participantIds is list
+        && data.participantIds.size() == 2
+        && data.participantIds[0] == data.senderId
+        && data.participantIds[1] == data.receiverId
+        && data.topic is string && data.topic.size() >= 1 && data.topic.size() <= 160
+        && data.sector is string && (data.sector == 'Private' || data.sector == 'Government')
+        && data.difficulty is string && (data.difficulty == 'Beginner' || data.difficulty == 'Intermediate' || data.difficulty == 'Advanced')
+        && isOptString(data, 'message', 500)
+        && isOptString(data, 'scheduledTime', 60)
+        && data.status is string && data.status in ['pending', 'accepted', 'declined', 'cancelled', 'completed']
+        && (!('sessionId' in data) || isValidId(data.sessionId))
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidPeerSession(data) {
+      return data.keys().hasAll([
+          'id', 'requestId', 'hostId', 'hostName', 'guestId', 'guestName',
+          'participantIds', 'interviewerId', 'topic', 'currentQuestion',
+          'status', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'requestId', 'hostId', 'hostName', 'guestId', 'guestName',
+          'participantIds', 'interviewerId', 'topic', 'currentQuestion',
+          'currentCategory', 'sharedNotes', 'status', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.id)
+        && isValidId(data.requestId)
+        && isValidId(data.hostId)
+        && isValidId(data.guestId)
+        && data.hostId != data.guestId
+        && data.hostName is string && data.hostName.size() >= 1 && data.hostName.size() <= 80
+        && data.guestName is string && data.guestName.size() >= 1 && data.guestName.size() <= 80
+        && data.participantIds is list
+        && data.participantIds.size() == 2
+        && data.participantIds[0] == data.hostId
+        && data.participantIds[1] == data.guestId
+        && isValidId(data.interviewerId)
+        && data.interviewerId in data.participantIds
+        && data.topic is string && data.topic.size() >= 1 && data.topic.size() <= 160
+        && data.currentQuestion is string && data.currentQuestion.size() >= 1 && data.currentQuestion.size() <= 600
+        && isOptString(data, 'currentCategory', 80)
+        && isOptString(data, 'sharedNotes', 4000)
+        && data.status is string && data.status in ['active', 'completed']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidPeerMessage(data) {
+      return data.keys().hasAll([
+          'id', 'sessionId', 'participantIds', 'senderId',
+          'senderName', 'senderRole', 'type', 'text', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'sessionId', 'participantIds', 'senderId',
+          'senderName', 'senderRole', 'type', 'text', 'score', 'createdAt'
+        ])
+        && isValidId(data.id)
+        && isValidId(data.sessionId)
+        && isValidId(data.senderId)
+        && data.senderId == request.auth.uid
+        && data.participantIds is list
+        && data.participantIds.size() == 2
+        && request.auth.uid in data.participantIds
+        && data.senderName is string && data.senderName.size() >= 1 && data.senderName.size() <= 80
+        && data.senderRole is string && data.senderRole in ['Interviewer', 'Candidate']
+        && data.type is string && data.type in ['chat', 'question', 'feedback']
+        && data.text is string && data.text.size() >= 1 && data.text.size() <= 2000
+        && (!('score' in data) || (data.score is number && data.score >= 0 && data.score <= 100))
+        && data.createdAt is timestamp;
+    }
+
+    function isValidPracticeGoal(data) {
+      return data.keys().hasAll([
+          'id', 'userId', 'title', 'metricType', 'unitLabel',
+          'targetValue', 'currentValue', 'status', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'userId', 'title', 'metricType', 'unitLabel',
+          'targetValue', 'currentValue', 'targetDate', 'status',
+          'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.id)
+        && isValidId(data.userId)
+        && data.userId == request.auth.uid
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 140
+        && data.metricType is string && data.metricType in ['interviews_completed', 'average_score', 'best_score', 'custom']
+        && data.unitLabel is string && data.unitLabel.size() >= 1 && data.unitLabel.size() <= 32
+        && data.targetValue is number && data.targetValue >= 1 && data.targetValue <= 10000
+        && data.currentValue is number && data.currentValue >= 0 && data.currentValue <= 10000
+        && isOptString(data, 'targetDate', 20)
+        && data.status is string && data.status in ['active', 'completed']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    // -----------------------------------------------------------------------
+    // User Profiles (/users/{userId}) - Strictly PII Isolated to Owner
+    // -----------------------------------------------------------------------
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if false;
+
+      allow create: if isVerifiedOwner(userId)
+        && isValidId(userId)
+        && isValidUserProfile(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+
+      allow update: if isVerifiedOwner(userId)
+        && isValidId(userId)
+        && isValidUserProfile(incoming())
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          // Action: Update Candidate Profile, Education, Skills, Certificates, Work History, Resume & Avatar
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'fullName', 'email', 'dob', 'gender', 'mobile', 'address',
+            'qualification', 'preferredLanguage', 'avatarUrl', 'resumeText',
+            'resumeFile', 'education', 'skills', 'certificates', 'workHistory',
+            'linkedinProfile', 'isCompleted', 'profileUpdatedAt', 'updatedAt'
+          ])
+          // Action: Sync LinkedIn Profile & Imported Work History into Resume Data
+          || incoming().diff(existing()).affectedKeys().hasOnly([
+            'linkedinProfile', 'workHistory', 'resumeText', 'skills',
+            'education', 'fullName', 'address', 'avatarUrl', 'isCompleted',
+            'profileUpdatedAt', 'updatedAt'
+          ])
+          // Action: Update Resume Text & File Metadata
+          || incoming().diff(existing()).affectedKeys().hasOnly([
+            'resumeText', 'resumeFile', 'profileUpdatedAt', 'updatedAt'
+          ])
+          // Action: Update Job Alert Subscription
+          || incoming().diff(existing()).affectedKeys().hasOnly([
+            'jobAlertSubscription', 'profileUpdatedAt', 'updatedAt'
+          ])
+          // Action: Sync Aggregated Interview Stats
+          || incoming().diff(existing()).affectedKeys().hasOnly([
+            'stats', 'profileUpdatedAt', 'updatedAt'
+          ])
+          // Action: Bootstrap & Reconcile Full Profile State Across Sessions
+          || incoming().diff(existing()).affectedKeys().hasOnly([
+            'fullName', 'email', 'dob', 'gender', 'mobile', 'address',
+            'qualification', 'preferredLanguage', 'avatarUrl', 'resumeText',
+            'resumeFile', 'education', 'skills', 'certificates', 'workHistory',
+            'linkedinProfile', 'jobAlertSubscription', 'stats', 'isCompleted',
+            'profileUpdatedAt', 'updatedAt'
+          ])
+        );
+
+      allow delete: if false;
+
+      // ---------------------------------------------------------------------
+      // Attended Mock Interviews (/users/{userId}/interviews/{interviewId})
+      // ---------------------------------------------------------------------
+      match /interviews/{interviewId} {
+        allow get: if isOwner(userId) && isValidId(interviewId) && hasParentUser(userId);
+        allow list: if isOwner(userId) && existing().userId == request.auth.uid;
+
+        allow create: if isVerifiedOwner(userId)
+          && isValidId(interviewId)
+          && isValidInterviewSession(incoming())
+          && incoming().id == interviewId
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && hasParentUser(userId);
+
+        allow update: if isVerifiedOwner(userId)
+          && isValidId(interviewId)
+          && isValidInterviewSession(incoming())
+          && incoming().id == existing().id
+          && incoming().userId == existing().userId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && existing().status != 'completed'
+          && hasParentUser(userId)
+          && (
+            // Action: Save in-progress answers and evaluations
+            (incoming().status == 'active' && incoming().diff(existing()).affectedKeys().hasOnly(['answers', 'evaluations', 'updatedAt']))
+            // Action: Finalize completed interview & performance report
+            || (incoming().status == 'completed' && incoming().diff(existing()).affectedKeys().hasOnly(['answers', 'evaluations', 'overallReport', 'status', 'duration', 'updatedAt']))
+          );
+
+        allow delete: if isVerifiedOwner(userId) && isValidId(interviewId) && hasParentUser(userId);
+      }
+
+      // ---------------------------------------------------------------------
+      // Bookmarked Jobs (/users/{userId}/savedJobs/{savedJobId})
+      // ---------------------------------------------------------------------
+      match /savedJobs/{savedJobId} {
+        allow get: if isOwner(userId) && isValidId(savedJobId) && hasParentUser(userId);
+        allow list: if isOwner(userId) && existing().userId == request.auth.uid;
+
+        allow create: if isVerifiedOwner(userId)
+          && isValidId(savedJobId)
+          && isValidSavedJob(incoming())
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && hasParentUser(userId);
+
+        allow update: if isVerifiedOwner(userId)
+          && isValidId(savedJobId)
+          && isValidSavedJob(incoming())
+          && incoming().id == existing().id
+          && incoming().userId == existing().userId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && hasParentUser(userId)
+          && incoming().diff(existing()).affectedKeys().hasOnly(['title', 'company', 'location', 'applyLink', 'savedAt', 'updatedAt']);
+
+        allow delete: if isVerifiedOwner(userId) && isValidId(savedJobId) && hasParentUser(userId);
+      }
+
+      // ---------------------------------------------------------------------
+      // Quick Apply Application Intents (/users/{userId}/applications/{applicationId})
+      // ---------------------------------------------------------------------
+      match /applications/{applicationId} {
+        allow get: if isOwner(userId) && isValidId(applicationId) && hasParentUser(userId);
+        allow list: if isOwner(userId) && existing().userId == request.auth.uid;
+
+        allow create: if isVerifiedOwner(userId)
+          && isValidId(applicationId)
+          && isValidJobApplication(incoming())
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && hasParentUser(userId);
+
+        allow update: if isVerifiedOwner(userId)
+          && isValidId(applicationId)
+          && isValidJobApplication(incoming())
+          && incoming().id == existing().id
+          && incoming().userId == existing().userId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && hasParentUser(userId)
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'candidateName', 'candidateEmail', 'candidatePhone',
+            'resumeName', 'availability', 'expectedSalary',
+            'intentSummary', 'matchedSkills', 'appliedAt', 'status', 'updatedAt'
+          ]);
+
+        allow delete: if isVerifiedOwner(userId) && isValidId(applicationId) && hasParentUser(userId);
+      }
+
+      // ---------------------------------------------------------------------
+      // Preparation Goals & Milestones (/users/{userId}/goals/{goalId})
+      // ---------------------------------------------------------------------
+      match /goals/{goalId} {
+        allow get: if isOwner(userId) && isValidId(goalId) && hasParentUser(userId);
+        allow list: if isOwner(userId) && existing().userId == request.auth.uid;
+
+        allow create: if isVerifiedOwner(userId)
+          && isValidId(goalId)
+          && isValidPracticeGoal(incoming())
+          && incoming().id == goalId
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && hasParentUser(userId);
+
+        allow update: if isVerifiedOwner(userId)
+          && isValidId(goalId)
+          && isValidPracticeGoal(incoming())
+          && incoming().id == existing().id
+          && incoming().userId == existing().userId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && hasParentUser(userId)
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'title', 'metricType', 'unitLabel', 'targetValue',
+            'currentValue', 'targetDate', 'status', 'updatedAt'
+          ]);
+
+        allow delete: if isVerifiedOwner(userId) && isValidId(goalId) && hasParentUser(userId);
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // Peer Practice Directory (/peerProfiles/{userId}) - Strictly PII-Free
+    // -----------------------------------------------------------------------
+    match /peerProfiles/{userId} {
+      allow get: if isSignedIn() && isValidId(userId);
+      allow list: if isSignedIn() && (existing().isAvailable == true || existing().uid == request.auth.uid);
+
+      allow create: if isVerifiedOwner(userId)
+        && isValidId(userId)
+        && isValidPeerProfile(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && hasParentUser(userId);
+
+      allow update: if isVerifiedOwner(userId)
+        && isValidId(userId)
+        && isValidPeerProfile(incoming())
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && hasParentUser(userId)
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'displayName', 'targetRole', 'sector', 'difficulty',
+          'isAvailable', 'skills', 'bio', 'experienceLevel',
+          'preferredLanguage', 'avatarInitials', 'updatedAt'
+        ]);
+
+      allow delete: if isVerifiedOwner(userId) && isValidId(userId) && hasParentUser(userId);
+    }
+
+    // -----------------------------------------------------------------------
+    // Peer Practice Match Requests (/peerRequests/{requestId})
+    // -----------------------------------------------------------------------
+    match /peerRequests/{requestId} {
+      allow get: if isSignedIn()
+        && isValidId(requestId)
+        && (request.auth.uid == existing().senderId || request.auth.uid == existing().receiverId);
+
+      allow list: if isSignedIn()
+        && (request.auth.uid in existing().participantIds);
+
+      allow create: if isVerifiedUser()
+        && isValidId(requestId)
+        && isValidPeerRequest(incoming())
+        && incoming().id == requestId
+        && incoming().senderId == request.auth.uid
+        && incoming().status == 'pending'
+        && !('sessionId' in incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && hasParentUser(request.auth.uid)
+        && exists(/databases/$(database)/documents/peerProfiles/$(incoming().receiverId));
+
+      allow update: if isVerifiedUser()
+        && isValidId(requestId)
+        && isValidPeerRequest(incoming())
+        && incoming().id == existing().id
+        && incoming().senderId == existing().senderId
+        && incoming().receiverId == existing().receiverId
+        && incoming().participantIds == existing().participantIds
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && existing().status in ['pending', 'accepted']
+        && (
+          // Sender cancels a pending request
+          (
+            request.auth.uid == existing().senderId
+            && existing().status == 'pending'
+            && incoming().status == 'cancelled'
+            && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])
+          )
+          // Receiver accepts a pending request and links sessionId
+          || (
+            request.auth.uid == existing().receiverId
+            && existing().status == 'pending'
+            && incoming().status == 'accepted'
+            && ('sessionId' in incoming())
+            && isValidId(incoming().sessionId)
+            && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'sessionId', 'updatedAt'])
+          )
+          // Receiver declines a pending request
+          || (
+            request.auth.uid == existing().receiverId
+            && existing().status == 'pending'
+            && incoming().status == 'declined'
+            && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])
+          )
+          // Either participant marks an accepted session as completed
+          || (
+            (request.auth.uid == existing().senderId || request.auth.uid == existing().receiverId)
+            && existing().status == 'accepted'
+            && incoming().status == 'completed'
+            && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])
+          )
+        );
+
+      allow delete: if false;
+    }
+
+    // -----------------------------------------------------------------------
+    // Live Peer Practice Rooms (/peerSessions/{sessionId} & /messages/{messageId})
+    // -----------------------------------------------------------------------
+    match /peerSessions/{sessionId} {
+      function isSessionParticipant() {
+        return isSignedIn() && request.auth.uid in existing().participantIds;
+      }
+
+      allow get: if isValidId(sessionId) && isSessionParticipant();
+      allow list: if isSignedIn() && request.auth.uid in existing().participantIds;
+
+      allow create: if isVerifiedUser()
+        && isValidId(sessionId)
+        && isValidPeerSession(incoming())
+        && incoming().id == sessionId
+        && incoming().status == 'active'
+        && request.auth.uid in incoming().participantIds
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && exists(/databases/$(database)/documents/peerRequests/$(incoming().requestId))
+        && get(/databases/$(database)/documents/peerRequests/$(incoming().requestId)).data.status == 'accepted'
+        && get(/databases/$(database)/documents/peerRequests/$(incoming().requestId)).data.senderId == incoming().hostId
+        && get(/databases/$(database)/documents/peerRequests/$(incoming().requestId)).data.receiverId == incoming().guestId;
+
+      allow update: if isVerifiedUser()
+        && isValidId(sessionId)
+        && isSessionParticipant()
+        && isValidPeerSession(incoming())
+        && incoming().id == existing().id
+        && incoming().requestId == existing().requestId
+        && incoming().hostId == existing().hostId
+        && incoming().guestId == existing().guestId
+        && incoming().participantIds == existing().participantIds
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && existing().status == 'active'
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'interviewerId', 'currentQuestion', 'currentCategory',
+          'sharedNotes', 'status', 'updatedAt'
+        ]);
+
+      allow delete: if false;
+
+      match /messages/{messageId} {
+        allow get: if isValidId(sessionId)
+          && isValidId(messageId)
+          && isSignedIn()
+          && request.auth.uid in existing().participantIds;
+
+        allow list: if isSignedIn() && request.auth.uid in existing().participantIds;
+
+        allow create: if isVerifiedUser()
+          && isValidId(sessionId)
+          && isValidId(messageId)
+          && isValidPeerMessage(incoming())
+          && incoming().id == messageId
+          && incoming().sessionId == sessionId
+          && incoming().createdAt == request.time
+          && exists(/databases/$(database)/documents/peerSessions/$(sessionId))
+          && get(/databases/$(database)/documents/peerSessions/$(sessionId)).data.status == 'active'
+          && get(/databases/$(database)/documents/peerSessions/$(sessionId)).data.participantIds == incoming().participantIds;
+
+        allow update, delete: if false;
+      }
+    }
+  }
+}

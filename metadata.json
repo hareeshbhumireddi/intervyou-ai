@@ -1,0 +1,11 @@
+{
+  "name": "Intervyou AI",
+  "description": "Professional AI-powered mock interview platform for job preparation with real-time feedback and performance analytics.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,193 @@
+@import "tailwindcss";
+
+/* The app toggles a `.dark` class on <html> (see ThemeProvider); make Tailwind's
+   `dark:` variant follow that class instead of only the OS preference. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Design tokens. Primary blue matches the reference product's theme colour (#2563EB). */
+@theme {
+  --color-brand-50: #eff6ff;
+  --color-brand-100: #dbeafe;
+  --color-brand-500: #3b82f6;
+  --color-brand-600: #2563eb;
+  --color-brand-700: #1d4ed8;
+  --color-brand-900: #1e3a8a;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+@keyframes progress-stripe {
+  from { background-position: 20px 0; }
+  to { background-position: 0 0; }
+}
+
+/* Visible keyboard focus everywhere. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-brand-600);
+  outline-offset: 2px;
+}
+
+/* react-big-calendar theme integration (light & dark mode) */
+.rbc-calendar {
+  font-family: inherit;
+  color: inherit;
+}
+
+.rbc-month-view,
+.rbc-time-view,
+.rbc-agenda-view table.rbc-agenda-table {
+  border-color: #e2e8f0;
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.rbc-header,
+.rbc-month-row + .rbc-month-row,
+.rbc-day-bg + .rbc-day-bg,
+.rbc-time-content,
+.rbc-time-header-content,
+.rbc-timeslot-group,
+.rbc-day-slot .rbc-time-slot,
+.rbc-agenda-view table.rbc-agenda-table tbody > tr > td + td,
+.rbc-agenda-view table.rbc-agenda-table tbody > tr + tr {
+  border-color: #e2e8f0;
+}
+
+.rbc-header {
+  padding: 0.625rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #475569;
+  background-color: #f8fafc;
+}
+
+.rbc-date-cell {
+  padding: 0.375rem 0.5rem 0.125rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.rbc-off-range {
+  color: #94a3b8;
+}
+
+.rbc-off-range-bg {
+  background-color: #f8fafc;
+}
+
+.rbc-today {
+  background-color: rgba(37, 99, 235, 0.08);
+}
+
+.rbc-now .rbc-button-link {
+  color: #2563eb;
+  font-weight: 800;
+}
+
+.rbc-event {
+  border-radius: 0.5rem;
+  padding: 2px 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: none;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+.rbc-event:focus {
+  outline: 2px solid #2563eb;
+  outline-offset: 1px;
+}
+
+.rbc-show-more {
+  color: #2563eb;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: transparent;
+}
+
+.rbc-time-gutter .rbc-timeslot-group {
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  color: #64748b;
+}
+
+.rbc-current-time-indicator {
+  background-color: #2563eb;
+  height: 2px;
+}
+
+.rbc-agenda-view table.rbc-agenda-table thead > tr > th {
+  border-color: #e2e8f0;
+  background-color: #f8fafc;
+  padding: 0.625rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #475569;
+}
+
+.rbc-agenda-view table.rbc-agenda-table tbody > tr > td {
+  padding: 0.625rem 0.75rem;
+  font-size: 0.8125rem;
+  vertical-align: middle;
+}
+
+/* Dark mode overrides */
+.dark .rbc-month-view,
+.dark .rbc-time-view,
+.dark .rbc-agenda-view table.rbc-agenda-table,
+.dark .rbc-header,
+.dark .rbc-month-row + .rbc-month-row,
+.dark .rbc-day-bg + .rbc-day-bg,
+.dark .rbc-time-content,
+.dark .rbc-time-header-content,
+.dark .rbc-timeslot-group,
+.dark .rbc-day-slot .rbc-time-slot,
+.dark .rbc-time-header.rbc-overflowing,
+.dark .rbc-agenda-view table.rbc-agenda-table thead > tr > th,
+.dark .rbc-agenda-view table.rbc-agenda-table tbody > tr > td + td,
+.dark .rbc-agenda-view table.rbc-agenda-table tbody > tr + tr {
+  border-color: #1e293b;
+}
+
+.dark .rbc-header,
+.dark .rbc-agenda-view table.rbc-agenda-table thead > tr > th {
+  background-color: #0f172a;
+  color: #cbd5e1;
+}
+
+.dark .rbc-off-range {
+  color: #475569;
+}
+
+.dark .rbc-off-range-bg {
+  background-color: #020617;
+}
+
+.dark .rbc-today {
+  background-color: rgba(59, 130, 246, 0.14);
+}
+
+.dark .rbc-now .rbc-button-link {
+  color: #60a5fa;
+}
+
+.dark .rbc-show-more {
+  color: #60a5fa;
+}
+
+.dark .rbc-time-gutter .rbc-timeslot-group {
+  color: #94a3b8;
+}
+
+.dark .rbc-agenda-empty {
+  color: #94a3b8;
+  padding: 1.5rem;
+  text-align: center;
+}
+
